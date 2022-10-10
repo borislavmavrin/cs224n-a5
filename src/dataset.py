@@ -23,8 +23,8 @@ You don't need to implement anything in NameDataset.
 
 class NameDataset(Dataset):
     def __init__(self, pretraining_dataset, data):
-        self.MASK_CHAR = u"\u2047" # the doublequestionmark character, for mask
-        self.PAD_CHAR = u"\u25A1" # the empty square character, for pad
+        self.MASK_CHAR = u"\u2047"  # the doublequestionmark character, for mask
+        self.PAD_CHAR = u"\u25A1"  # the empty square character, for pad
         self.itos = pretraining_dataset.itos 
         self.stoi = pretraining_dataset.stoi 
         self.block_size = pretraining_dataset.block_size

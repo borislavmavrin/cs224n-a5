@@ -167,6 +167,7 @@ elif args.function == 'evaluate':
         predictions = []
         for line in tqdm(open(args.eval_corpus_path)):
             x = line.split('\t')[0]
+            x = x.encode('utf-8').decode('ascii', errors='ignore')
             x = x + '⁇'
             x = torch.tensor([pretrain_dataset.stoi[s] for s in x], dtype=torch.long)[None,...].to(device)
             pred = utils.sample(model, x, 32, sample=False)[0]

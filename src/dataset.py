@@ -148,7 +148,7 @@ class CharCorruptionDataset(Dataset):
         self.MASK_CHAR = u"\u2047"  # the doublequestionmark character, for mask
         self.PAD_CHAR = u"\u25A1"  # the empty square character, for pad
 
-        # TODO: data.encode('utf-8').decode('ascii', errors='ignore') to reduce vocabulary
+        data = data.encode('utf-8').decode('ascii', errors='ignore')
         chars = list(sorted(list(set(data))))
         assert self.MASK_CHAR not in chars 
         assert self.PAD_CHAR not in chars

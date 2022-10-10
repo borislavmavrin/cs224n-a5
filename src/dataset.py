@@ -21,6 +21,7 @@ the same as that of the pretraining dataset.
 You don't need to implement anything in NameDataset.
 """
 
+
 class NameDataset(Dataset):
     def __init__(self, pretraining_dataset, data):
         self.MASK_CHAR = u"\u2047"  # the doublequestionmark character, for mask
@@ -141,10 +142,12 @@ Here are some examples of input-output pairs (x, y):
 
 
 """
+
+
 class CharCorruptionDataset(Dataset):
     def __init__(self, data, block_size):
-        self.MASK_CHAR = u"\u2047" # the doublequestionmark character, for mask
-        self.PAD_CHAR = u"\u25A1" # the empty square character, for pad
+        self.MASK_CHAR = u"\u2047"  # the doublequestionmark character, for mask
+        self.PAD_CHAR = u"\u25A1"  # the empty square character, for pad
 
         chars = list(sorted(list(set(data))))
         assert self.MASK_CHAR not in chars 
@@ -152,8 +155,8 @@ class CharCorruptionDataset(Dataset):
         chars.insert(0, self.MASK_CHAR)
         chars.insert(0, self.PAD_CHAR)
 
-        self.stoi = { ch:i for i,ch in enumerate(chars) }
-        self.itos = { i:ch for i,ch in enumerate(chars) }
+        self.stoi = {ch: i for i, ch in enumerate(chars)}
+        self.itos = {i: ch for i, ch in enumerate(chars)}
 
         data_size, vocab_size = len(data), len(chars)
         print('data has %d characters, %d unique.' % (data_size, vocab_size))
@@ -168,7 +171,36 @@ class CharCorruptionDataset(Dataset):
 
     def __getitem__(self, idx):
         # TODO [part e]: see spec above
-        raise NotImplementedError
+        x = self.data[idx]
+
+        # 1. randomly truncate len to interval [4,int(self.block_size*7/8)] characters
+        end_ch = random.randint(4, int(self.block_size*7/8))
+        x = x[:end_ch]
+
+        # 2. x -> [prefix] [masked_content] [suffix], s.t. avg_len([masked_content]) = 1 / 4
+        i = random.randint(1, len(x) - 2)
+        if len(x) - 2 > i + 1:
+            j = random.randint(i + 1, len(x) - 1)
+        else:
+            j = i + 1
+
+        prefix = x[:i]
+        masked = x[i:j]
+        suffix = x[j:]
+
+        # 3. Mask and pad
+        x = prefix + self.MASK_CHAR + suffix + self.MASK_CHAR + masked
+        x = x + self.PAD_CHAR * (self.block_size - len(x))
+
+        # 4. shift
+        y = x[1:]
+        x = x[:-1]
+
+        # 5. encode
+        x = torch.tensor([self.stoi[c] for c in x], dtype=torch.long)
+        y = torch.tensor([self.stoi[c] for c in y], dtype=torch.long)
+        return x, y
+
 
 """
 Code under here is strictly for your debugging purposes; feel free to modify
@@ -177,8 +209,8 @@ as desired.
 if __name__ == '__main__':
     argp = argparse.ArgumentParser()
     argp.add_argument('dataset_type', help="Type of dataset to sample from."
-            "Options: namedata, charcorruption.",
-            choices=["namedata", "charcorruption"])
+                                           "Options: namedata, charcorruption.",
+                      choices=["namedata", "charcorruption"])
     args = argp.parse_args()
 
     if args.dataset_type == 'namedata':
@@ -186,7 +218,7 @@ if __name__ == '__main__':
         corruption_dataset = CharCorruptionDataset(open('wiki.txt').read(), 128) 
         # Make the name dataset
         name_dataset = NameDataset(corruption_dataset,
-            open('birth_places_train.tsv').read())
+                                   open('birth_places_train.tsv').read())
         for _, example in zip(range(4), name_dataset):
             x, y = example
             print('x:', ''.join([name_dataset.itos[int(c)] for c in x]))
@@ -199,6 +231,4 @@ if __name__ == '__main__':
             print('x:', ''.join([corruption_dataset.itos[int(c)] for c in x]))
             print('y:', ''.join([corruption_dataset.itos[int(c)] for c in y]))
     else:
-        raise ValueError("Unknown dataset type in command line args: {}"
-                .format(args.dataset_type))
-
+        raise ValueError("Unknown dataset type in command line args: {}".format(args.dataset_type))

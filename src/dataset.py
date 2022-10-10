@@ -140,7 +140,6 @@ Here are some examples of input-output pairs (x, y):
   x: John Stephen. Born in Glasgow, Steph⁇lder's apprentice on⁇en became a we⁇□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□
   y: ohn Stephen. Born in Glasgow, Steph⁇lder's apprentice on⁇en became a we⁇□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□□
 
-
 """
 
 
@@ -149,6 +148,7 @@ class CharCorruptionDataset(Dataset):
         self.MASK_CHAR = u"\u2047"  # the doublequestionmark character, for mask
         self.PAD_CHAR = u"\u25A1"  # the empty square character, for pad
 
+        # TODO: data.encode('utf-8').decode('ascii', errors='ignore') to reduce vocabulary
         chars = list(sorted(list(set(data))))
         assert self.MASK_CHAR not in chars 
         assert self.PAD_CHAR not in chars
@@ -164,6 +164,8 @@ class CharCorruptionDataset(Dataset):
         self.block_size = block_size
         self.vocab_size = vocab_size
         self.data = data.split('\n')
+        self.data = [l.strip() for l in self.data]
+        self.data = [l for l in self.data if l]
 
     def __len__(self):
         # returns the length of the dataset
@@ -176,6 +178,7 @@ class CharCorruptionDataset(Dataset):
         # 1. randomly truncate len to interval [4,int(self.block_size*7/8)] characters
         end_ch = random.randint(4, int(self.block_size*7/8))
         x = x[:end_ch]
+        assert len(x) > 3, "data input is less than 4 tokens: {}".format(x)
 
         # 2. x -> [prefix] [masked_content] [suffix], s.t. avg_len([masked_content]) = 1 / 4
         i = random.randint(1, len(x) - 2)
